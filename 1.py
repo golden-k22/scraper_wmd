@@ -15,7 +15,7 @@ from bulkscraper import *
 
 PRICE_DB = "c1lsd"
 # PRICE_DB = "c1w21db1"
-URL_DB = "c1lsd"
+URL_DB = "scrapelistdb"
 POOL_SIZE = 4
 
 
@@ -47,13 +47,11 @@ class WorkspaceWindow(tk.Tk):
         self.scraper = ScrapClass()
         tk.Tk.__init__(self, *args, **kwargs)
         self.scrapeTypes = tk.StringVar()
-        self.scrapeEditions = tk.StringVar()
         self.itemValues = tk.StringVar()
         self.formatTypeValues = tk.StringVar()
         self.inkTypeValues = tk.StringVar()
         self.densityTypeValues = tk.StringVar()
         self.productTimeValues = tk.StringVar()
-        self.quantity = tk.StringVar()
 
         self.wm_title("Scraping Envelope")
         self.grid_columnconfigure(0, weight=1)
@@ -71,15 +69,12 @@ class WorkspaceWindow(tk.Tk):
         main_frame.grid_rowconfigure(1, pad=5)
 
         # Create Scraper interface
-        scrapeFrame = ttk.LabelFrame(main_frame, text="1.Scraper", width=800, height=300)
+        scrapeFrame = ttk.LabelFrame(main_frame, text="1.Scraper")
         scrapeFrame.grid(row=0, column=0, sticky="NSWE")
         scrapeFrame.grid_columnconfigure(0, weight=1)
         scrapeFrame.grid_columnconfigure(1, weight=3)
         scrapeFrame.grid_columnconfigure(2, weight=1)
-        scrapeFrame.grid_rowconfigure(0, pad=5)        
-        scrapeFrame.update_idletasks()  # Ensure the frame is fully initialized        
-        scrapeFrame.grid_propagate(False)  # Prevent the frame from resizing smaller than its content
-
+        scrapeFrame.grid_rowconfigure(0, pad=5)
 
         ttk.Label(scrapeFrame, text="URL:").grid(
             row=0, column=0, sticky="W", padx=5)
@@ -105,44 +100,35 @@ class WorkspaceWindow(tk.Tk):
         self.typeMenu = tk.Menu(self.typeSelector)
         self.typeSelector['menu'] = self.typeMenu
 
-        
-        # Bind the callback function to the scrapeTypes StringVar
-        self.scrapeTypes.trace_add('write', lambda *args: self.scraper.getEditions(self))
-
-        ttk.Label(scrapeFrame, text="Edition:").grid(
-            row=2, column=0, sticky="W", padx=5)
-        self.editionSelector = ttk.Menubutton(scrapeFrame, text="Select Edition", width=60)
-        self.editionSelector.grid(
-            row=2, column=1, columnspan=3, sticky="WE", pady=5, padx=5)
-        self.editionMenu = tk.Menu(self.editionSelector)
-        self.editionSelector['menu'] = self.editionMenu
-
-        self.scrapeEditions.trace_add('write', lambda *args: self.scraper.getOptions(self))
-
         self.express_option = tk.StringVar()
-        
+        # Create Option Check for time
         ttk.Label(scrapeFrame, text="Production time:").grid(
-            row=3, column=0, sticky="W", pady=5, padx=5)
-        # Create a frame to hold the dynamically created radio buttons
-        self.radio_buttons_frame = ttk.Frame(scrapeFrame)
-        self.radio_buttons_frame.grid(row=3, column=1, columnspan=5, sticky="WE", pady=5, padx=5)
+            row=2, column=0, sticky="W", pady=5, padx=5)
+        ttk.Radiobutton(scrapeFrame, text="Planmäßige", value="STANDARD_PRODUCTION",
+                        variable=self.express_option).grid(row=2, column=1, sticky="WE")
+        ttk.Radiobutton(scrapeFrame, text="48h-Express", value="48h",
+                        variable=self.express_option).grid(row=2, column=2, sticky="WE")
+        ttk.Radiobutton(scrapeFrame, text="24h-Express", value="24h",
+                        variable=self.express_option).grid(row=2, column=3, sticky="WE", padx=5)
+
+        self.express_option.set("STANDARD_PRODUCTION")
 
         ttk.Label(scrapeFrame, text="Stop Count Pieces:").grid(
-            row=4, column=0, sticky="WE", padx=5)
+            row=3, column=0, sticky="WE", padx=5)
         self.stopCntInput = ttk.Entry(scrapeFrame)
         self.stopCntInput.grid(
-            row=4, column=1, columnspan=3, sticky="WE", pady=5, padx=5)
+            row=3, column=1, columnspan=3, sticky="WE", pady=5, padx=5)
         add_numeric_validation(self.stopCntInput, when="key")
 
         self.startScrapButton = ttk.Button(
             scrapeFrame, text="Start scrape", command=lambda: self.scraper.startScrap(self))
         self.startScrapButton.grid(
-            row=5, column=1, padx=(15, 0), sticky="WE", pady=5)
+            row=4, column=1, padx=(15, 0), sticky="WE", pady=5)
         self.stopScrapButton = ttk.Button(
             scrapeFrame, text="Stop scrape", state="disabled", command=lambda: self.scraper.stopScrap(self))
-        self.stopScrapButton.grid(row=5, column=2, padx=(15, 0), sticky="WE")
+        self.stopScrapButton.grid(row=4, column=2, padx=(15, 0), sticky="WE")
         self.resetScrapButton = ttk.Button(scrapeFrame, text="Reset", command=self.resetAll)
-        self.resetScrapButton.grid(row=5, column=3, padx=(15, 5), sticky="WE")
+        self.resetScrapButton.grid(row=4, column=3, padx=(15, 5), sticky="WE")
 
         # Interface of Lettershop Database
 
@@ -344,7 +330,7 @@ class WorkspaceWindow(tk.Tk):
         # Init SQL
 
         # Connect price db
-        self.sql = SqlManager(self, host="localhost", user="root", pwd="",
+        self.sql = SqlManager(self, host="XXXXXX", user="XXXXX", pwd="XXXXXX",
                               port="3306", database="c1lsd")
 
         # Connect Url List DB
@@ -374,10 +360,6 @@ class WorkspaceWindow(tk.Tk):
 
     def setScrapeTypeText(self, txt):
         self.typeSelector.configure(text=txt)
-
-    def setScrapeEditionText(self, txt, quantity):
-        self.editionSelector.configure(text=txt)
-        self.quantity = quantity
 
     def LoadItemFromDB(self):
         query = "SELECT * FROM items"
@@ -693,7 +675,6 @@ class WorkspaceWindow(tk.Tk):
     def addUrlToList(self):
         url = self.url_entry.get()
         typ = self.scrapeTypes.get()
-        edition = self.scrapeEditions.get()
         scrapeTime = self.express_option.get()
         stopCount = self.stopCntInput.get()
         itemId = self.itemValues.get()
@@ -846,8 +827,7 @@ class WorkspaceWindow(tk.Tk):
             return
 
         url = self.url_entry.get()
-        typ = self.scrapeTypes.get()        
-        edition = self.scrapeEditions.get()
+        typ = self.scrapeTypes.get()
         scrapeTime = self.express_option.get()
         stopCount = self.stopCntInput.get()
         itemId = self.itemValues.get()
@@ -935,7 +915,6 @@ class WorkspaceWindow(tk.Tk):
         infoList = []
 
         for rowID in scrapeRowIDs:
-            print(rowID.values)
             for data in self.urlList:
                 if int(data[0]) == int(rowID.values[0]):
                     infoList.append(data)

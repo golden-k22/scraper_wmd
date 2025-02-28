@@ -47,7 +47,6 @@ class BulkScraper() :
         try:
             # find empty label
             labelID = -1
-            print("================================")
             print(self.labelFlag)
             with self.flagLock:
                 for i in range(POOL_SIZE) :
@@ -397,9 +396,6 @@ class BulkScraper() :
             
         with ThreadPoolExecutor(max_workers=POOL_SIZE) as executor:
             i = 0
-            
-            print("================================")
-            print(self.dataList)
             for scrapeInfo in self.dataList:
                 thread_index = i % POOL_SIZE
                 labelWnd = self.window.scrapeThreadLabel[thread_index]
