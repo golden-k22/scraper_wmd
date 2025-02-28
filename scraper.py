@@ -227,13 +227,15 @@ class ScrapClass:
                     return
                 if stopPoint > 0 and auflageOption['wert'] > stopPoint:
                     break
-                editionId = auflageOption['id']
-                optionId = self.getOptionsId(window, editionId, self.param['substrateId']).result()
-                quantity = auflageOption['wert']
-                price = self.getPrice(window, editionId, self.param['substrateId'], optionId, quantity).result()
-                print(price)
-                
-                window.scrapeData.append((auflageOption['wert'], price))
+                selectedOption = window.express_option.get()
+                if selectedOption == "STANDARD_PRODUCTION":
+                    window.scrapeData.append((auflageOption['wert'], auflageOption['preis']))
+                else:
+                    editionId = auflageOption['id']
+                    optionId = self.getOptionsId(window, editionId, self.param['substrateId']).result()
+                    quantity = auflageOption['wert']
+                    price = self.getPrice(window, editionId, self.param['substrateId'], optionId, quantity).result()
+                    window.scrapeData.append((auflageOption['wert'], price))
 
             window.scrapeTable.delete_rows()
             for data in window.scrapeData:
